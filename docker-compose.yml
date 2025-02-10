@@ -1,0 +1,38 @@
+version: '3.4'
+
+services:
+  mongodb:
+    container_name: mongo.db
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/var/lib/mongodb/data
+    networks:
+      - hsquiznet
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "mongoadmin"
+      MONGO_INITDB_ROOT_PASSWORD: "Abc123456$"
+
+  sqlserver:
+    container_name: sqlserver.db
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "1434:1433"
+    volumes:
+      - sqlserver-data:/var/lib/sqlserver/data
+    networks:
+      - hsquiznet
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Abc123456$"
+
+networks:
+  hsquiznet:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  sqlserver-data:
