@@ -1,0 +1,7 @@
+[*.cs]
+
+# IDE0022: Use block body for method
+csharp_style_expression_bodied_methods = true
+
+# IDE0021: Use block body for constructor
+csharp_style_expression_bodied_constructors = false
