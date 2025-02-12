@@ -14,6 +14,7 @@ namespace Identity.API.Database
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfiguration(new AppUserEntityConfiguration());
+            base.OnModelCreating(builder);
         }
     }
 }

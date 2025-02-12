@@ -1,3 +1,4 @@
+using Identity.API;
 using Identity.API.Database;
 using Identity.API.Models;
 using Identity.API.Services;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-string migrationAssembly = typeof(ApplicationDbContext).Assembly.FullName!;
+string migrationAssembly = typeof(ApplicationDbContext).Assembly.GetName().FullName;
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions =>
@@ -23,8 +24,10 @@ builder.Services.AddIdentity<AppUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.Configure<AppSettings>(builder.Configuration);
+
 builder.Services.AddIdentityServer(x => {
-    x.IssuerUri = "https://hsquiz.vn";
+    x.IssuerUri = "https://hsquiz.com.vn";
     x.Authentication.CookieLifetime = TimeSpan.FromHours(2);
 })
     .AddAspNetIdentity<AppUser>()
@@ -71,6 +74,17 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Identity.API v1"));
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path == "/")
+        {
+            context.Response.Redirect("/swagger");
+        }
+        else
+        {
+            await next();
+        }
+    });
 }
 
 app.UseHttpsRedirection();
@@ -80,5 +94,7 @@ app.UseIdentityServer();
 app.UseRouting();
 
 app.UseAuthorization();
+// Migrate and seed database
+app.MigrationDatabase();
 
 app.Run();

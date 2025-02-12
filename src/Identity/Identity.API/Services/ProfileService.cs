@@ -25,9 +25,9 @@ namespace Identity.API.Services
             var claims = new List<Claim>
             {
                 new Claim(JwtClaimTypes.Subject, user.Id),
-                new Claim(JwtClaimTypes.PreferredUserName, user.UserName),
-                new Claim(JwtClaimTypes.Name, user.UserName),
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
+                new Claim(JwtClaimTypes.PreferredUserName, user.UserName!),
+                new Claim(JwtClaimTypes.Name, user.UserName!),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
             };
 
             if (!string.IsNullOrWhiteSpace(user.FirstName))
@@ -44,7 +44,7 @@ namespace Identity.API.Services
             {
                 claims.AddRange(new[]
                 {
-                    new Claim(JwtClaimTypes.Email, user.Email),
+                    new Claim(JwtClaimTypes.Email, user.Email!),
                     new Claim(JwtClaimTypes.EmailVerified, user.EmailConfirmed ? "true" : "false", ClaimValueTypes.Boolean)
                 });
             }
@@ -56,7 +56,7 @@ namespace Identity.API.Services
         {
             var sub = context.Subject ?? throw new ArgumentNullException(nameof(context.Subject));
             var subjectId = sub.Claims.FirstOrDefault(x => x.Type == "sub")?.Value;
-            var user = await _userManager.FindByIdAsync(subjectId);
+            var user = await _userManager.FindByIdAsync(subjectId!);
             if (user == null)
             {
                 throw new ArgumentException("Invalid subject identifier");
@@ -69,7 +69,7 @@ namespace Identity.API.Services
         {
             var sub = context.Subject ?? throw new ArgumentNullException(nameof(context.Subject));
             var subjectId = sub.Claims.FirstOrDefault(x => x.Type == "sub")?.Value;
-            var user = await _userManager.FindByIdAsync(subjectId);
+            var user = await _userManager.FindByIdAsync(subjectId!);
             context.IsActive = false;
             if (user != null)
             {
@@ -91,6 +91,6 @@ namespace Identity.API.Services
                     user.LockoutEnd <= DateTime.Now;
             }
         }
-        
+
     }
 }
