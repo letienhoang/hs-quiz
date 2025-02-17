@@ -1,3 +1,4 @@
+using Examination.API;
 using Examination.Application.Commands.V1.StartExam;
 using Examination.Application.Mapping;
 using Examination.Domain.AggregateModels.ExamAggregate;
@@ -6,10 +7,19 @@ using Examination.Domain.AggregateModels.UserAggregate;
 using Examination.Infrastructure.Repositoty;
 using Examination.Infrastructure.SeedWork;
 using MongoDB.Driver;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
-// Add services to the container.
+var appName = typeof(ExamLogger).Namespace;
 
+// Create Serilog logger
+var configuration = ExamLogger.GetConfiguration();
+Log.Logger = ExamLogger.CreateSerilogLogger(configuration);
+builder.Host.UseSerilog();
+
+Log.Information("Starting application ({ApplicationContext}) ...", appName);
+
+// Add services to the container.
 // Version API
 builder.Services.AddApiVersioning(options => {
     options.ReportApiVersions = true;
@@ -55,6 +65,8 @@ builder.Services.AddTransient<IUserRepository, UserRepository>();
 
 var app = builder.Build();
 
+Log.Information("The application built successfully ({ApplicationContext})", appName);
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -64,7 +76,7 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Examination.API v1");
         c.SwaggerEndpoint("/swagger/v2/swagger.json", "Examination.API v2");
     });
-    
+
     app.Use(async (context, next) =>
     {
         if (context.Request.Path == "/")
@@ -84,4 +96,17 @@ app.UseCors("CorsPolicy");
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+Log.Information("Starting the application ({ApplicationContext}) ...", appName);
+try
+{
+    app.Run();
+    Log.Information("The application started successfully ({ApplicationContext})", appName);
+}
+catch (Exception ex) 
+{
+    Log.Fatal(ex, "The application failed to start correctly ({ApplicationContext})", appName);
+}
+finally
+{
+    Log.CloseAndFlush();
+}
