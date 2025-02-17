@@ -5,6 +5,11 @@ using Identity.API.Services;
 using IdentityServer8.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using HealthChecks.UI.Client;
+using System.Text.Json;
+using System.Net.Mime;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -66,6 +71,19 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
+// Health checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy())
+    .AddSqlServer(connectionString!, name: "IdentityDB-check", tags: new string[] { "identitydb" });
+
+builder.Services.AddHealthChecksUI(opt => {
+    opt.SetEvaluationTimeInSeconds(15);
+    opt.MaximumHistoryEntriesPerEndpoint(60);
+    opt.SetApiMaxActiveRequests(1);
+    opt.AddHealthCheckEndpoint("Identity API", "/hc");
+})
+.AddInMemoryStorage();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -96,5 +114,29 @@ app.UseRouting();
 app.UseAuthorization();
 // Migrate and seed database
 app.MigrationDatabase();
+
+// Health checks
+app.MapHealthChecks("/hc", new HealthCheckOptions(){
+    Predicate = _ => true,
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+app.UseHealthChecksUI(config => {
+    config.UIPath = "/hc-ui";
+    config.ApiPath = "/hc-api";
+});
+app.MapHealthChecks("/liveness", new HealthCheckOptions{
+    Predicate = r => r.Name.Contains("self")
+});
+app.MapHealthChecks("/hc-details", new HealthCheckOptions {
+    ResponseWriter = async (context, report) =>
+    {
+        var result = JsonSerializer.Serialize(new{
+            status = report.Status.ToString(),
+            monitors = report.Entries.Select(e => new { key = e.Key, value = Enum.GetName(typeof(HealthStatus), e.Value.Status) })
+        });
+        context.Response.ContentType = MediaTypeNames.Application.Json;
+        await context.Response.WriteAsync(result);
+    }
+});
 
 app.Run();

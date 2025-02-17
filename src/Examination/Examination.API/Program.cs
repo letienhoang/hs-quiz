@@ -1,3 +1,5 @@
+using System.Net.Mime;
+using System.Text.Json;
 using Examination.API;
 using Examination.Application.Commands.V1.StartExam;
 using Examination.Application.Mapping;
@@ -6,11 +8,19 @@ using Examination.Domain.AggregateModels.ExamResultAggregate;
 using Examination.Domain.AggregateModels.UserAggregate;
 using Examination.Infrastructure.Repositoty;
 using Examination.Infrastructure.SeedWork;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MongoDB.Driver;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var appName = typeof(ExamLogger).Namespace;
+var user = builder.Configuration.GetValue<string>("DatabaseSettings:User");
+var password = builder.Configuration.GetValue<string>("DatabaseSettings:Password");
+var server = builder.Configuration.GetValue<string>("DatabaseSettings:Server");
+var databaseName = builder.Configuration.GetValue<string>("DatabaseSettings:DatabaseName");
+var mongodbConnectionString = "mongodb://" + user + ":" + password + "@" + server + "/" + databaseName + "?authSource=admin";
 
 // Create Serilog logger
 var configuration = ExamLogger.GetConfiguration();
@@ -30,13 +40,9 @@ builder.Services.AddVersionedApiExplorer(options => {
 });
 
 builder.Services.AddSingleton<IMongoClient>(c => {
-    var user = builder.Configuration.GetValue<string>("DatabaseSettings:User");
-    var password = builder.Configuration.GetValue<string>("DatabaseSettings:Password");
-    var server = builder.Configuration.GetValue<string>("DatabaseSettings:Server");
-    var databaseName = builder.Configuration.GetValue<string>("DatabaseSettings:DatabaseName");
-
-    return new MongoClient($"mongodb://{user}:{password}@{server}/{databaseName}?authSource=admin");
+    return new MongoClient(mongodbConnectionString);
 });
+
 builder.Services.AddScoped(c => c.GetService<IMongoClient>()!.StartSession());
 builder.Services.AddAutoMapper(cfg => { cfg.AddProfile(new MappingProfile()); });
 builder.Services.AddMediatR(cfg =>
@@ -58,6 +64,19 @@ builder.Services.AddSwaggerGen(c => {
     c.SwaggerDoc("v2", new() { Title = "Examination.API V2", Version = "v2" });
 });
 builder.Services.AddControllers();
+
+// Health checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy())
+    .AddMongoDb(clientFactory: sp => sp.GetRequiredService<IMongoClient>(), databaseNameFactory: sp => databaseName!, name: "MongoDB", failureStatus: HealthStatus.Unhealthy);
+
+builder.Services.AddHealthChecksUI(opt => {
+    opt.SetEvaluationTimeInSeconds(15);
+    opt.MaximumHistoryEntriesPerEndpoint(60);
+    opt.SetApiMaxActiveRequests(1);
+    opt.AddHealthCheckEndpoint("Exam API", "/hc");
+})
+.AddInMemoryStorage();
 
 builder.Services.AddTransient<IExamRepository, ExamRepository>();
 builder.Services.AddTransient<IExamResultRepository, ExamResultRepository>();
@@ -94,6 +113,31 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors("CorsPolicy");
 app.UseAuthorization();
+
+// Health checks
+app.MapHealthChecks("/hc", new HealthCheckOptions(){
+    Predicate = _ => true,
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+app.UseHealthChecksUI(config => {
+    config.UIPath = "/hc-ui";
+    config.ApiPath = "/hc-api";
+});
+app.MapHealthChecks("/liveness", new HealthCheckOptions{
+    Predicate = r => r.Name.Contains("self")
+});
+app.MapHealthChecks("/hc-details", new HealthCheckOptions {
+    ResponseWriter = async (context, report) =>
+    {
+        var result = JsonSerializer.Serialize(new{
+            status = report.Status.ToString(),
+            monitors = report.Entries.Select(e => new { key = e.Key, value = Enum.GetName(typeof(HealthStatus), e.Value.Status) })
+        });
+        context.Response.ContentType = MediaTypeNames.Application.Json;
+        await context.Response.WriteAsync(result);
+    }
+});
+
 app.MapControllers();
 
 Log.Information("Starting the application ({ApplicationContext}) ...", appName);
