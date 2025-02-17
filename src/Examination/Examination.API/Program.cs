@@ -1,4 +1,4 @@
-using Examination.Application.Commands.StartExam;
+using Examination.Application.Commands.V1.StartExam;
 using Examination.Application.Mapping;
 using Examination.Domain.AggregateModels.ExamAggregate;
 using Examination.Domain.AggregateModels.ExamResultAggregate;
@@ -9,6 +9,15 @@ using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
+
+// Version API
+builder.Services.AddApiVersioning(options => {
+    options.ReportApiVersions = true;
+});
+builder.Services.AddVersionedApiExplorer(options => {
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
 
 builder.Services.AddSingleton<IMongoClient>(c => {
     var user = builder.Configuration.GetValue<string>("DatabaseSettings:User");
@@ -34,7 +43,10 @@ builder.Services.AddCors(options =>{
 
 builder.Services.Configure<ExamSettings>(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c => c.SwaggerDoc("v1", new() { Title = "Examination.API", Version = "v1" }));
+builder.Services.AddSwaggerGen(c => {
+    c.SwaggerDoc("v1", new() { Title = "Examination.API V1", Version = "v1" });
+    c.SwaggerDoc("v2", new() { Title = "Examination.API V2", Version = "v2" });
+});
 builder.Services.AddControllers();
 
 builder.Services.AddTransient<IExamRepository, ExamRepository>();
@@ -48,7 +60,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
     app.UseSwagger();
-    app.UseSwaggerUI(c=>c.SwaggerEndpoint("/swagger/v1/swagger.json", "Examination.API v1"));
+    app.UseSwaggerUI(c => {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Examination.API v1");
+        c.SwaggerEndpoint("/swagger/v2/swagger.json", "Examination.API v2");
+    });
+    
     app.Use(async (context, next) =>
     {
         if (context.Request.Path == "/")

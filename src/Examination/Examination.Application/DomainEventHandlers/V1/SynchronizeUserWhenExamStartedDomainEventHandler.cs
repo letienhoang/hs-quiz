@@ -2,7 +2,7 @@ using Examination.Domain.AggregateModels.UserAggregate;
 using Examination.Domain.Events;
 using MediatR;
 
-namespace Examination.Application.DomainEventHandlers
+namespace Examination.Application.DomainEventHandlers.V1
 {
     public class SynchronizeUserWhenExamStartedDomainEventHandler : INotificationHandler<ExamStartedDomainEvent>
     {

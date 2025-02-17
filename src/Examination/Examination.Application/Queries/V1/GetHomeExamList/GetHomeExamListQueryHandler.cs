@@ -4,7 +4,7 @@ using Examination.Dtos;
 using MediatR;
 using MongoDB.Driver;
 
-namespace Examination.Application.Queries.GetHomeExamList
+namespace Examination.Application.Queries.V1.GetHomeExamList
 {
     public class GetHomeExamListQueryHandler : IRequestHandler<GetHomeExamListQuery, IEnumerable<ExamDto>>
     {
