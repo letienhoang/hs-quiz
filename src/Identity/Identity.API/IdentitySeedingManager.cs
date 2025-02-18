@@ -7,13 +7,13 @@ using Serilog;
 
 namespace Identity.API
 {
-    public static class MigrationManager
+    public static class IdentitySeedingManager
     {
-        public static WebApplication MigrationDatabase(this WebApplication app) 
+        public static WebApplication IdentitySeedingDatabase(this WebApplication app) 
         {
             using (var scope = app.Services.CreateScope())
             {
-                string appName = app.GetType().Name;
+                string appName = typeof(IdentitySeedingManager).Namespace!;
                 var configuration = GetConfiguration();
                 var services = scope.ServiceProvider;
                 var logger = services.GetRequiredService<ILogger<WebApplication>>();

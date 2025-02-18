@@ -140,6 +140,8 @@ app.MapHealthChecks("/hc-details", new HealthCheckOptions {
 
 app.MapControllers();
 
+app.ExamSeedingDatabase();
+
 Log.Information("Starting the application ({ApplicationContext}) ...", appName);
 try
 {

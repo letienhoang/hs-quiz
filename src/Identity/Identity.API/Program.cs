@@ -113,7 +113,7 @@ app.UseRouting();
 
 app.UseAuthorization();
 // Migrate and seed database
-app.MigrationDatabase();
+app.IdentitySeedingDatabase();
 
 // Health checks
 app.MapHealthChecks("/hc", new HealthCheckOptions(){
