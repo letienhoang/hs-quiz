@@ -95,18 +95,6 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Examination.API v1");
         c.SwaggerEndpoint("/swagger/v2/swagger.json", "Examination.API v2");
     });
-
-    app.Use(async (context, next) =>
-    {
-        if (context.Request.Path == "/")
-        {
-            context.Response.Redirect("/swagger");
-        }
-        else
-        {
-            await next();
-        }
-    });
 }
 
 app.UseHttpsRedirection();
