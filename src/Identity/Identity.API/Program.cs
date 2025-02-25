@@ -1,6 +1,6 @@
 using Identity.API;
 using Identity.API.Database;
-using Identity.API.Models;
+using Identity.EntityFramework.Shared.Entities.Identity;
 using Identity.API.Services;
 using IdentityServer8.Services;
 using Microsoft.AspNetCore.Identity;
@@ -10,56 +10,49 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using HealthChecks.UI.Client;
 using System.Text.Json;
 using System.Net.Mime;
+using Identity.API.Configuration.Interfaces;
+using Identity.API.Configuration;
+using Identity.API.Helpers;
+using Identity.API.Configuration.Constants;
+using Identity.EntityFramework.Shared.DbContexts;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 string migrationAssembly = typeof(ApplicationDbContext).Assembly.GetName().FullName;
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString, sqlOptions =>
-    {
-        sqlOptions.MigrationsAssembly(migrationAssembly);
-        sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorNumbersToAdd: null);
-    }));
+builder.Services.RegisterDbContexts<AdminIdentityDbContext, IdentityServerConfigurationDbContext, IdentityServerPersistedGrantDbContext, IdentityServerDataProtectionDbContext>(builder.Configuration);
+// builder.Services.AddDbContext<ApplicationDbContext>(options =>
+//     options.UseSqlServer(connectionString, sqlOptions =>
+//     {
+//         sqlOptions.MigrationsAssembly(migrationAssembly);
+//         sqlOptions.EnableRetryOnFailure(
+//             maxRetryCount: 5,
+//             maxRetryDelay: TimeSpan.FromSeconds(30),
+//             errorNumbersToAdd: null);
+//     }));
 
-builder.Services.AddIdentity<AppUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+builder.Services.AddMvcWithLocalization<UserIdentity<string>, string>(builder.Configuration);
+
+// builder.Services.AddIdentity<UserIdentity, IdentityRole>()
+//     .AddEntityFrameworkStores<ApplicationDbContext>()
+//     .AddDefaultTokenProviders();
 
 builder.Services.Configure<AppSettings>(builder.Configuration);
 
-builder.Services.AddIdentityServer(x => {
-    x.IssuerUri = "https://hsquiz.com.vn";
-    x.Authentication.CookieLifetime = TimeSpan.FromHours(2);
-})
-    .AddAspNetIdentity<AppUser>()
-    .AddDeveloperSigningCredential()
-    .AddConfigurationStore(options =>{
-        options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString, 
-            sqlServerOptionsAction: sqlOptions =>
-            {
-                sqlOptions.MigrationsAssembly(migrationAssembly);
-                sqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
-            });
-    })
-    .AddOperationalStore(options =>{
-        options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString, 
-            sqlServerOptionsAction: sqlOptions =>
-            {
-                sqlOptions.MigrationsAssembly(migrationAssembly);
-                sqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
-            });
-    });
+builder.Services.AddAuthenticationServices<AdminIdentityDbContext, UserIdentity, UserIdentityRole>(builder.Configuration);
+builder.Services.AddIdentityServer<IdentityServerConfigurationDbContext, IdentityServerPersistedGrantDbContext, UserIdentity>(builder.Configuration);
+
 builder.Services.AddTransient<IProfileService, ProfileService>();
+builder.Services.AddScoped<IRootConfiguration, RootConfiguration>();
+builder.Services.AddScoped(typeof(UserResolver<>));
+
+// Create root configuration
+var rootConfiguration = new RootConfiguration();
+builder.Configuration.GetSection(ConfigurationConsts.AdminConfigurationKey).Bind(rootConfiguration.AdminConfiguration);
+builder.Configuration.GetSection(ConfigurationConsts.RegisterConfigurationKey).Bind(rootConfiguration.RegisterConfiguration);
+
+builder.Services.AddSingleton(rootConfiguration);
+builder.Services.AddAuthorizationPolicies(rootConfiguration);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -96,9 +89,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
+// Add custom security headers
+app.UseSecurityHeaders(builder.Configuration);
+app.UseMvcLocalizationServices();
 app.UseIdentityServer();
 
 app.UseRouting();
+app.UseStaticFiles();
 
 app.UseAuthorization();
 // Migrate and seed database
@@ -127,5 +124,9 @@ app.MapHealthChecks("/hc-details", new HealthCheckOptions {
         await context.Response.WriteAsync(result);
     }
 });
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

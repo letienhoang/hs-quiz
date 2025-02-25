@@ -1,5 +1,4 @@
 using Identity.API.Database;
-using Identity.API.Extensions;
 using IdentityServer8.EntityFramework.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -46,28 +45,6 @@ namespace Identity.API
                 return app;
             }
         }
-
-        private static IHost BuildWebHost(IConfiguration configuration)
-        {
-            return Host.CreateDefaultBuilder()
-            .UseSerilog((context, services, config) => config.ReadFrom.Configuration(context.Configuration))
-            .ConfigureWebHostDefaults(webBuilder =>{
-                webBuilder.CaptureStartupErrors(false);
-                webBuilder.ConfigureAppConfiguration(x => x.AddConfiguration(configuration));
-                webBuilder.UseContentRoot(Directory.GetCurrentDirectory());
-            }).Build();
-        }
-
-        private static Serilog.ILogger CreateSerilogLogger(IConfiguration configuration)
-        {
-            return new LoggerConfiguration()
-                .MinimumLevel.Verbose()
-                .Enrich.WithProperty("ApplicationContext", "Identity.API")
-                .Enrich.FromLogContext()
-                .WriteTo.Console()
-                .ReadFrom.Configuration(configuration)
-                .CreateLogger();
-        }   
 
         private static IConfiguration GetConfiguration()
         {

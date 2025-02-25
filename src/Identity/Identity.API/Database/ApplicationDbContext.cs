@@ -1,11 +1,11 @@
 using Identity.API.Database.Configuration;
-using Identity.API.Models;
+using Identity.EntityFramework.Shared.Entities.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Identity.API.Database
 {
-    public class ApplicationDbContext : IdentityDbContext<AppUser>
+    public class ApplicationDbContext : IdentityDbContext<UserIdentity>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
@@ -13,7 +13,7 @@ namespace Identity.API.Database
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.ApplyConfiguration(new AppUserEntityConfiguration());
+            builder.ApplyConfiguration(new UserIdentityEntityConfiguration());
             base.OnModelCreating(builder);
         }
     }

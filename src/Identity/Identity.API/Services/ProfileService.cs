@@ -4,7 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Identity.API.Models;
+using Identity.EntityFramework.Shared.Entities.Identity;
 using IdentityModel;
 using IdentityServer8.Models;
 using IdentityServer8.Services;
@@ -14,13 +14,13 @@ namespace Identity.API.Services
 {
     public class ProfileService : IProfileService
     {
-        private readonly UserManager<AppUser> _userManager;
-        public ProfileService(UserManager<AppUser> userManager)
+        private readonly UserManager<UserIdentity> _userManager;
+        public ProfileService(UserManager<UserIdentity> userManager)
         {
             _userManager = userManager;
         }
 
-        private IEnumerable<Claim> GetClaimsFromUser(AppUser user)
+        private IEnumerable<Claim> GetClaimsFromUser(UserIdentity user)
         {
             var claims = new List<Claim>
             {

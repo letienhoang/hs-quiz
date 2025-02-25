@@ -1,4 +1,4 @@
-using Identity.API.Models;
+using Identity.EntityFramework.Shared.Entities.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
@@ -6,7 +6,7 @@ namespace Identity.API.Database
 {
     public class ApplicationDbContextSeed
     {
-        private readonly IPasswordHasher<AppUser> _passwordHasher = new PasswordHasher<AppUser>();
+        private readonly IPasswordHasher<UserIdentity> _passwordHasher = new PasswordHasher<UserIdentity>();
 
         public async Task SeedAsync(ApplicationDbContext context, IWebHostEnvironment env,
             ILogger<ApplicationDbContextSeed> logger, IOptions<AppSettings> settings, int? retry = 0)
@@ -39,10 +39,10 @@ namespace Identity.API.Database
             }
         }
 
-        private IEnumerable<AppUser> GetDefaultUser()
+        private IEnumerable<UserIdentity> GetDefaultUser()
         {
             var user =
-            new AppUser()
+            new UserIdentity()
             {
                 Email = "admin@demo.com",
                 Id = Guid.NewGuid().ToString(),
@@ -57,7 +57,7 @@ namespace Identity.API.Database
 
             user.PasswordHash = _passwordHasher.HashPassword(user, "Admin@123$");
 
-            return new List<AppUser>()
+            return new List<UserIdentity>()
             {
                 user
             };
