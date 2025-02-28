@@ -8,6 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="HigginsSoft.IdentityServer8.EntityFramework" Version="8.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.12" />
+    <PackageReference Include="Skoruba.AuditLogging.EntityFramework" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Identity.EntityFramework.Extensions\Identity.EntityFramework.Extensions.csproj" />
   </ItemGroup>
 
 </Project>

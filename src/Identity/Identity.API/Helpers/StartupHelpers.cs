@@ -36,7 +36,7 @@ namespace Identity.API.Helpers
         /// </summary>
         /// <param name="services"></param>
         public static IMvcBuilder AddMvcWithLocalization<TUser, TKey>(this IServiceCollection services, IConfiguration configuration)
-            where TUser : UserIdentity<TKey>
+            where TUser : IdentityUser<TKey>
             where TKey : IEquatable<TKey>
         {
             services.AddLocalization(opts => { opts.ResourcesPath = ConfigurationConsts.ResourcesPath; });

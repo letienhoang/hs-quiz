@@ -16,7 +16,7 @@ namespace Identity.API.Controllers
 {
     [Authorize]
     public class ManageController<TUser, TKey> : Controller
-        where TUser : UserIdentity<TKey>, new()
+        where TUser : IdentityUser<TKey>, new()
         where TKey : IEquatable<TKey>
     {
         private readonly UserManager<TUser> _userManager;

@@ -30,16 +30,6 @@ namespace Identity.API.Services
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName!),
             };
 
-            if (!string.IsNullOrWhiteSpace(user.FirstName))
-            {
-                claims.Add(new Claim(JwtClaimTypes.GivenName, user.FirstName));
-            }
-
-            if (!string.IsNullOrWhiteSpace(user.LastName))
-            {
-                claims.Add(new Claim(JwtClaimTypes.FamilyName, user.LastName));
-            }
-
             if (_userManager.SupportsUserEmail)
             {
                 claims.AddRange(new[]

@@ -1,5 +1,6 @@
 using System.Reflection;
 using Identity.EntityFramework.Shared.Entities.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -7,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.Controllers;
 namespace Identity.API.Configuration.ApplicationParts
 {
     public class GenericTypeControllerFeatureProvider<TUser, TKey> : IApplicationFeatureProvider<ControllerFeature>
-        where TUser : UserIdentity<TKey>        
+        where TUser : IdentityUser<TKey>        
         where TKey : IEquatable<TKey>
     {
         public void PopulateFeature(IEnumerable<ApplicationPart> parts, ControllerFeature feature)

@@ -13,8 +13,6 @@ namespace Identity.API.Database.Configuration
     {
         public void Configure(EntityTypeBuilder<UserIdentity> builder)
         {
-            builder.Property(u => u.FirstName).IsRequired().HasMaxLength(50);
-            builder.Property(u => u.LastName).IsRequired().HasMaxLength(50);
         }
     }
 }

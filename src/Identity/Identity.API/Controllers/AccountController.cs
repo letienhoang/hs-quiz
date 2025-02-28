@@ -27,7 +27,7 @@ namespace Identity.API.Controllers
     [SecurityHeaders]
     [Authorize]
     public class AccountController<TUser, TKey> : Controller
-        where TUser : UserIdentity<TKey>, new()
+        where TUser : IdentityUser<TKey>, new()
         where TKey : IEquatable<TKey>
     {
         private readonly UserResolver<TUser> _userResolver;

@@ -36,7 +36,7 @@
     <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Http" Version="9.1.0" />
     <PackageReference Include="Skoruba.AuditLogging.EntityFramework" Version="2.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.0" />
   </ItemGroup>
 
   <ItemGroup>

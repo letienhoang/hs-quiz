@@ -46,8 +46,6 @@ namespace Identity.API.Database
             {
                 Email = "admin@demo.com",
                 Id = Guid.NewGuid().ToString(),
-                LastName = "Account",
-                FirstName = "Demo",
                 PhoneNumber = "1234567890",
                 UserName = "admin@demo.com",
                 NormalizedEmail = "ADMIN@DEMO.COM",

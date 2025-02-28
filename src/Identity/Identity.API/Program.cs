@@ -15,10 +15,19 @@ using Identity.API.Configuration;
 using Identity.API.Helpers;
 using Identity.API.Configuration.Constants;
 using Identity.EntityFramework.Shared.DbContexts;
+using Identity.Shared.Configuration.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 string migrationAssembly = typeof(ApplicationDbContext).Assembly.GetName().FullName;
+
+// Create root configuration
+var rootConfiguration = new RootConfiguration();
+builder.Configuration.GetSection(ConfigurationConsts.AdminConfigurationKey).Bind(rootConfiguration.AdminConfiguration);
+builder.Configuration.GetSection(ConfigurationConsts.RegisterConfigurationKey).Bind(rootConfiguration.RegisterConfiguration);
+
+builder.Services.AddSingleton(rootConfiguration);
+builder.Services.AddAuthorizationPolicies(rootConfiguration);
 
 builder.Services.RegisterDbContexts<AdminIdentityDbContext, IdentityServerConfigurationDbContext, IdentityServerPersistedGrantDbContext, IdentityServerDataProtectionDbContext>(builder.Configuration);
 // builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -31,7 +40,12 @@ builder.Services.RegisterDbContexts<AdminIdentityDbContext, IdentityServerConfig
 //             errorNumbersToAdd: null);
 //     }));
 
-builder.Services.AddMvcWithLocalization<UserIdentity<string>, string>(builder.Configuration);
+builder.Services.AddDataProtection<IdentityServerDataProtectionDbContext>(builder.Configuration);
+builder.Services.AddEmailSenders(builder.Configuration);
+
+builder.Services.AddMvcWithLocalization<UserIdentity, string>(builder.Configuration);
+
+builder.Services.AddIdSHealthChecks<IdentityServerConfigurationDbContext, IdentityServerPersistedGrantDbContext, AdminIdentityDbContext, IdentityServerDataProtectionDbContext>(builder.Configuration);
 
 // builder.Services.AddIdentity<UserIdentity, IdentityRole>()
 //     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -45,14 +59,6 @@ builder.Services.AddIdentityServer<IdentityServerConfigurationDbContext, Identit
 builder.Services.AddTransient<IProfileService, ProfileService>();
 builder.Services.AddScoped<IRootConfiguration, RootConfiguration>();
 builder.Services.AddScoped(typeof(UserResolver<>));
-
-// Create root configuration
-var rootConfiguration = new RootConfiguration();
-builder.Configuration.GetSection(ConfigurationConsts.AdminConfigurationKey).Bind(rootConfiguration.AdminConfiguration);
-builder.Configuration.GetSection(ConfigurationConsts.RegisterConfigurationKey).Bind(rootConfiguration.RegisterConfiguration);
-
-builder.Services.AddSingleton(rootConfiguration);
-builder.Services.AddAuthorizationPolicies(rootConfiguration);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -99,7 +105,7 @@ app.UseStaticFiles();
 
 app.UseAuthorization();
 // Migrate and seed database
-app.IdentitySeedingDatabase();
+//app.IdentitySeedingDatabase();
 
 // Health checks
 app.MapHealthChecks("/hc", new HealthCheckOptions(){
