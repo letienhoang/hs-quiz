@@ -1,0 +1,33 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Error",
+      "Override": {
+        "Skoruba": "Information"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console"
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "Log/admin.txt",
+          "rollingInterval": "Day"
+        }
+      },
+      {
+        "Name": "MSSqlServer",
+        "Args": {
+          "connectionString": "Server=.,1434;Database=Identity;User Id=sa;Password=Abc123456$;TrustServerCertificate=True;",
+          "tableName": "Log",
+          "columnOptionsSection": {
+            "addStandardColumns": [ "LogEvent" ],
+            "removeStandardColumns": [ "Properties" ]
+          }
+        }
+      }
+    ]
+  }
+}

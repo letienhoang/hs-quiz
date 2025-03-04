@@ -16,10 +16,20 @@ using Identity.API.Helpers;
 using Identity.API.Configuration.Constants;
 using Identity.EntityFramework.Shared.DbContexts;
 using Identity.Shared.Configuration.Helpers;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 string migrationAssembly = typeof(ApplicationDbContext).Assembly.GetName().FullName;
+
+// Get configuration from configuration files
+IConfiguration configuration = GetConfiguration(args);
+
+Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .CreateLogger();
+
+builder.Configuration.AddConfiguration(configuration);
 
 // Create root configuration
 var rootConfiguration = new RootConfiguration();
@@ -101,6 +111,8 @@ app.UseMvcLocalizationServices();
 app.UseIdentityServer();
 
 app.UseRouting();
+
+app.UsePathBase(builder.Configuration.GetValue<string>("BasePath"));
 app.UseStaticFiles();
 
 app.UseAuthorization();
@@ -131,8 +143,35 @@ app.MapHealthChecks("/hc-details", new HealthCheckOptions {
     }
 });
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapDefaultControllerRoute();
 
 app.Run();
+
+
+/// <summary>
+/// Build application configuration from multiple JSON files and environments.
+/// </summary>
+IConfiguration GetConfiguration(string[] args)
+{
+    string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    bool isDevelopment = environment == Environments.Development;
+
+    var configurationBuilder = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+        .AddJsonFile("serilog.json", optional: true, reloadOnChange: true)
+        .AddJsonFile($"serilog.{environment}.json", optional: true, reloadOnChange: true);
+
+    if (isDevelopment)
+    {
+        configurationBuilder.AddUserSecrets<Program>(true);
+    }
+
+    IConfiguration config = configurationBuilder.Build();
+    config.AddAzureKeyVaultConfiguration(configurationBuilder);
+    configurationBuilder.AddCommandLine(args);
+    configurationBuilder.AddEnvironmentVariables();
+
+    return configurationBuilder.Build();
+}
